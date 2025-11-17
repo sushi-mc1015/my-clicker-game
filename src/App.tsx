@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-// --- ⬇️ ここから追加 (Firebase) ⬇️ ---
-import { db } from './firebaseConfig'; // 作成した設定ファイルをインポート
-import { doc, setDoc, onSnapshot, increment } from 'firebase/firestore'; // Firestoreで使う関数
-// --- ⬆️ ここまで追加 ⬆️ ---
+// --- ⬇️ Firebase 関連のインポートを更新 ⬇️ ---
+import { db, auth } from './firebaseConfig'; // auth をインポート
+import { doc, setDoc, onSnapshot, increment } from 'firebase/firestore';
+// 認証 (Auth) で使う関数をインポート
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  User // 10行目のコメントを削除しました
+} from "firebase/auth";
 
 
 // LocalStorageのキー (Step 4のまま)
@@ -17,67 +24,83 @@ interface GameData {
   lastSavedAt: number;
 }
 
-// --- ⬇️ ここから追加 (ランキング用) ⬇️ ---
-
 // 接続するドキュメント（データ）の場所を定義
 // 'global' -> 'stats' という名前のドキュメントに保存する
 const globalStatsDocRef = doc(db, 'global', 'stats');
 
-// --- ⬆️ ここまで追加 ⬆️ ---
-
 
 function App() {
-  // --- ⬇️ ステートの初期化を修正 ⬇️ ---
-
-  // useState<number>(...) のように、<number> を追加
+  // --- ⬇️ ステートの初期化 (型指定) ⬇️ ---
   const [count, setCount] = useState<number>(() => {
     const savedData = localStorage.getItem(SAVE_KEY);
     return savedData ? JSON.parse(savedData).count : 0;
   });
 
-  // clickPower にも <number> を追加
   const [clickPower, setClickPower] = useState<number>(() => {
     const savedData = localStorage.getItem(SAVE_KEY);
     return savedData ? JSON.parse(savedData).clickPower : 1;
   });
 
-  // aps にも <number> を追加
   const [aps, setAps] = useState<number>(() => {
     const savedData = localStorage.getItem(SAVE_KEY);
     return savedData ? JSON.parse(savedData).aps : 0;
   });
+  // --- ⬆️ 修正ここまで ⬆️ ---
 
-  // --- ⬆️ ステートの初期化 (Step 4のまま) ⬆️ ---
 
+  // --- ⬇️ ここから追加 (認証用) ⬇️ ---
 
-  // --- ⬇️ ここから追加 (ランキング用) ⬇️ ---
+  // ログインしているユーザーの情報を保存するステート
+  const [user, setUser] = useState<User | null>(null);
+
+  // useEffect (Auth): 認証状態を監視
+  useEffect(() => {
+    // onAuthStateChanged: ログイン状態が変わるたびに呼び出される
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // ログインしていればUserオブジェクト、していなければnull
+    });
+    // コンポーネントが不要になったら監視を解除
+    return () => unsubscribe();
+  }, []); // [] 空の配列 = 最初に1回だけ実行
+
+  // Googleログイン処理
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider(); // Google認証プロバイダー
+    try {
+      await signInWithPopup(auth, provider); // ポップアップでログイン
+    } catch (error) {
+      console.error("Google ログインエラー: ", error);
+    }
+  };
+
+  // ログアウト処理
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth); // Firebaseからログアウト
+    } catch (error) {
+      console.error("ログアウトエラー: ", error);
+    }
+  };
+
+  // --- ⬆️ ここまで追加 (認証用) ⬆️ ---
+
 
   // グローバルな合計クリック数を管理するステート
   const [globalTotalClicks, setGlobalTotalClicks] = useState<number | null>(null);
 
   // useEffect (1): Firestoreのデータを「リアルタイムで監視」する
   useEffect(() => {
-    // onSnapshot: Firestoreのデータが変更されるたびに、この中の処理が自動で実行される
     const unsubscribe = onSnapshot(globalStatsDocRef, (doc) => {
       if (doc.exists()) {
-        // データベースにデータがあれば、その 'totalClicks' の値をステートにセット
         setGlobalTotalClicks(doc.data().totalClicks);
       } else {
-        // データがなければ (初回など)
         setGlobalTotalClicks(0);
       }
     });
-
-    // コンポーネントが不要になったら監視を解除する (クリーンアップ)
     return () => unsubscribe();
-    
-    // [] (空の依存配列) は、「ページ読み込み時に1回だけ実行」
   }, []);
 
-  // --- ⬆️ ここまで追加 ⬆️ ---
-
-
-  // useEffect (2): オフライン収益 (Step 4のまま)
+  // useEffect (2): オフライン収益
   useEffect(() => {
     const savedDataString = localStorage.getItem(SAVE_KEY);
     if (!savedDataString) return;
@@ -96,7 +119,7 @@ function App() {
     }
   }, []);
 
-  // useEffect (3): 自動収益タイマー (Step 4のまま)
+  // useEffect (3): 自動収益タイマー
   useEffect(() => {
     if (aps > 0) {
       const intervalId = setInterval(() => {
@@ -106,8 +129,9 @@ function App() {
     }
   }, [aps]);
 
-  // useEffect (4): ローカルデータ保存 (Step 4のまま)
+  // useEffect (4): ローカルデータ保存
   useEffect(() => {
+    // (将来的に：もしログインしていたら、LocalStorageではなくFirestoreに保存する)
     const gameData: GameData = {
       count: count,
       clickPower: clickPower,
@@ -118,32 +142,30 @@ function App() {
   }, [count, clickPower, aps]);
 
 
-  // コスト計算 (Step 4のまま)
+  // コスト計算
   const upgradeCost = 10 * clickPower;
   const autoClickerCost = 25 * (aps + 1);
 
 
-  // 1. クリック関数 (ここをFirebase対応に変更！)
+  // 1. クリック関数 (Firebase対応)
   const handleClick = async () => {
     // 1. 自分のローカルリソースを増やす
     setCount(count + clickPower);
 
-    // --- ⬇️ ここから追加 (Firebaseへの書き込み) ⬇️ ---
+    // 2. グローバルな統計を更新
     try {
-      // 'global/stats' ドキュメントの 'totalClicks' フィールドを
-      // 'clickPower' 分だけ「増やす」(increment)
       await setDoc(globalStatsDocRef, { 
         totalClicks: increment(clickPower) 
-      }, { merge: true }); // merge: true は、ドキュメントの他のデータを壊さず追記するおまじない
+      }, { merge: true });
       
     } catch (error) {
       console.error("Error updating global stats: ", error);
-      // エラーが起きてもゲームは止めない
     }
-    // --- ⬆️ ここまで追加 ⬆️ ---
+    
+    // (将来的に：もしログインしていたら、個人のスコアもFirestoreに保存する)
   };
 
-  // 2. クリック強化関数 (変更なし)
+  // 2. クリック強化関数
   const handleUpgrade = () => {
     if (count >= upgradeCost) {
       setCount(count - upgradeCost);
@@ -153,7 +175,7 @@ function App() {
     }
   };
 
-  // 3. 自動化施設購入関数 (変更なし)
+  // 3. 自動化施設購入関数
   const handleBuyAutoClicker = () => {
     if (count >= autoClickerCost) {
       setCount(count - autoClickerCost);
@@ -167,20 +189,36 @@ function App() {
   // 4. 画面に表示する内容
   return (
     <>
+      {/* --- ⬇️ ここから変更 (認証UI) ⬇️ --- */}
+      <div className="auth-container" style={{ padding: '10px', backgroundColor: '#eee', marginBottom: '20px', borderRadius: '8px' }}>
+        {user ? (
+          // ログインしている場合
+          <div>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>ようこそ、{user.displayName} さん</p>
+            <button onClick={handleSignOut} style={{ marginTop: '5px' }}>ログアウト</button>
+          </div>
+        ) : (
+          // ログインしていない場合
+          <div>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>ログインして、ランキングに参加しよう！</p>
+            <button onClick={handleGoogleSignIn} style={{ marginTop: '5px' }}>Googleでログイン</button>
+          </div>
+        )}
+      </div>
+      {/* --- ⬆️ ここまで変更 (認証UI) ⬆️ --- */}
+
       <h1>クリッカーゲーム (Firebase対応)</h1>
 
-      {/* --- ⬇️ ここから追加 (ランキング) ⬇️ --- */}
+      {/* グローバル・クリック数 */}
       <div className="card" style={{ backgroundColor: '#f0f8ff' }}>
         <h2>グローバル・クリック数</h2>
         <h3>
-          {/* データベースから読み込んでいる間は "読込中..." と表示 */}
           {globalTotalClicks === null ? '読込中...' : Math.floor(globalTotalClicks)}
         </h3>
         <p>（全ユーザーの合計クリック数）</p>
       </div>
-      {/* --- ⬆️ ここまで追加 ⬆️ --- */}
 
-
+      {/* 自分のリソース */}
       <div className="card">
         <h2>リソース: {Math.floor(count)}</h2>
         <p>（現在のクリックパワー: {clickPower}）</p>
