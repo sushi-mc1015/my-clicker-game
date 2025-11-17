@@ -19,11 +19,6 @@ interface GameData {
 
 // --- ⬇️ ここから追加 (ランキング用) ⬇️ ---
 
-// Firestoreに保存する「グローバルデータ」の型
-interface GlobalData {
-  totalClicks: number;
-}
-
 // 接続するドキュメント（データ）の場所を定義
 // 'global' -> 'stats' という名前のドキュメントに保存する
 const globalStatsDocRef = doc(db, 'global', 'stats');
