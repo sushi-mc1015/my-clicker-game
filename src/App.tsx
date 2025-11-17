@@ -9,9 +9,11 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
-  onAuthStateChanged, 
-  User // 10行目のコメントを削除しました
+  onAuthStateChanged
 } from "firebase/auth";
+// 'User' は型(Type)なので、このように分けてインポートします
+import type { User } from "firebase/auth"; 
+// --- ⬆️ ここまで更新 ⬆️ ---
 
 
 // LocalStorageのキー (Step 4のまま)
