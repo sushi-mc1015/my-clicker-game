@@ -138,7 +138,7 @@ function App() {
       count: count,
       clickPower: clickPower,
       aps: aps,
-      lastSavedAt: Date.now(),
+      lastSavedAt: Date.Now(),
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(gameData));
   }, [count, clickPower, aps]);
