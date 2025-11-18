@@ -20,8 +20,14 @@ interface GameData {
   lastSavedAt: number;
 }
 
-// グローバル統計ドキュメントの参照
-const globalStatsDocRef = doc(db, 'global', 'stats');
+// 今日の日付を YYYY-MM-DD 形式で取得する helper 関数
+const getTodayDateKey = (): string => {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 // ランキングエントリの型
 interface RankingEntry {
@@ -90,11 +96,14 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // グローバル統計の監視
+  // グローバル統計の監視（1日ごと）
   useEffect(() => {
-    const unsubscribe = onSnapshot(globalStatsDocRef, (doc) => {
+    const todayKey = getTodayDateKey();
+    const todayStatsDocRef = doc(db, 'global', 'dailyStats', todayKey);
+    
+    const unsubscribe = onSnapshot(todayStatsDocRef, (doc) => {
       if (doc.exists()) {
-        setGlobalTotalClicks(doc.data().totalClicks);
+        setGlobalTotalClicks(doc.data().clicks || 0);
       } else {
         setGlobalTotalClicks(0);
       }
@@ -181,9 +190,11 @@ function App() {
 
     // Firebase に記録
     try {
-      // グローバル統計を更新
-      await setDoc(globalStatsDocRef, { 
-        totalClicks: increment(1) 
+      // 本日のグローバル統計を更新
+      const todayKey = getTodayDateKey();
+      const todayStatsDocRef = doc(db, 'global', 'dailyStats', todayKey);
+      await setDoc(todayStatsDocRef, { 
+        clicks: increment(1) 
       }, { merge: true });
 
       // ログインしていればユーザースコアを保存
@@ -270,9 +281,9 @@ function App() {
           )}
         </div>
 
-        {/* グローバル統計 */}
+        {/* 本日のクリック数 */}
         <div className="global-stats">
-          <p className="stat-label">全体クリック数</p>
+          <p className="stat-label">1日のクリック数</p>
           <p className="stat-value">
             {globalTotalClicks === null ? '...' : Math.floor(globalTotalClicks)}
           </p>
