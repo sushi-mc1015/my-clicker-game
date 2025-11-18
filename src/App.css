@@ -161,6 +161,12 @@ body {
   transform: scale(0.95);
 }
 
+/* パンチコンテナ */
+.punch-container {
+  position: relative;
+  display: inline-block;
+}
+
 .clickable-image {
   width: 280px;
   height: 280px;
@@ -181,16 +187,27 @@ body {
   animation: pulse 0.4s ease-out;
 }
 
-@keyframes pulse {
+/* パンチエフェクト */
+.punch-effect {
+  position: absolute;
+  font-size: 48px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: punch-animation 0.4s ease-out forwards;
+  z-index: 10;
+}
+
+@keyframes punch-animation {
   0% {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
     opacity: 1;
   }
   50% {
-    transform: scale(1.15);
+    transform: translate(-50%, -50%) scale(1.2) rotate(-15deg);
   }
   100% {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(0.3) rotate(-30deg);
+    opacity: 0;
   }
 }
 

@@ -37,6 +37,15 @@ function App() {
   // クリック時のアニメーション用
   const [isClicking, setIsClicking] = useState(false);
 
+  // パンチエフェクト表示用（複数同時表示対応）
+  interface PunchEffect {
+    id: number;
+    x: number;
+    y: number;
+  }
+  const [punchEffects, setPunchEffects] = useState<PunchEffect[]>([]);
+  const [punchIdCounter, setPunchIdCounter] = useState(0);
+
   // ユーザーが入力した画像 URL
   const [customImageUrl, setCustomImageUrl] = useState<string>(() => {
     const saved = localStorage.getItem('custom-image-url');
@@ -98,7 +107,22 @@ function App() {
   };
 
   // 画像をクリック
-  const handleImageClick = async () => {
+  const handleImageClick = async (e: React.MouseEvent<HTMLImageElement>) => {
+    // マウス位置を取得
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // パンチエフェクトを追加
+    const newId = punchIdCounter;
+    setPunchEffects([...punchEffects, { id: newId, x, y }]);
+    setPunchIdCounter(punchIdCounter + 1);
+
+    // 300ms後にパンチを削除
+    setTimeout(() => {
+      setPunchEffects((prev) => prev.filter((p) => p.id !== newId));
+    }, 300);
+
     setIsClicking(true);
     setScore(score + 1);
 
@@ -174,12 +198,27 @@ function App() {
 
         {/* クリック可能な画像 */}
         <div className={`image-click-area ${isClicking ? 'clicked' : ''}`}>
-          <img
-            src={displayImageUrl}
-            alt="Click me to relieve stress"
-            className={`clickable-image ${isClicking ? 'pulse' : ''}`}
-            onClick={handleImageClick}
-          />
+          <div className="punch-container">
+            <img
+              src={displayImageUrl}
+              alt="Click me to relieve stress"
+              className={`clickable-image ${isClicking ? 'pulse' : ''}`}
+              onClick={handleImageClick}
+            />
+            {/* パンチエフェクト表示 */}
+            {punchEffects.map((punch) => (
+              <div
+                key={punch.id}
+                className="punch-effect"
+                style={{
+                  left: `${punch.x}px`,
+                  top: `${punch.y}px`,
+                }}
+              >
+                👊
+              </div>
+            ))}
+          </div>
           <p className="click-hint">クリックしてストレス解消！</p>
         </div>
 
