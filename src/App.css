@@ -212,6 +212,89 @@ body {
   }
 }
 
+/* ========== 画像設定セクション ========== */
+.image-config-section {
+  margin-top: 40px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.image-config-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.image-url-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.image-url-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+}
+
+.config-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.config-button.save {
+  background: #667eea;
+  color: white;
+}
+
+.config-button.save:hover {
+  background: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.config-button.reset {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.config-button.reset:hover {
+  background: #d0d0d0;
+  transform: translateY(-2px);
+}
+
+.current-url {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #999;
+  word-break: break-all;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border-left: 3px solid #667eea;
+}
+
 /* ========== レスポンシブ ========== */
 @media (max-width: 768px) {
   .stress-relief-container {
@@ -241,6 +324,22 @@ body {
   .click-hint {
     font-size: 16px;
   }
+
+  .image-config-section {
+    max-width: 100%;
+  }
+
+  .input-group {
+    flex-direction: column;
+  }
+
+  .image-url-input {
+    min-width: 100%;
+  }
+
+  .config-button {
+    flex: 1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -255,5 +354,23 @@ body {
 
   .stat-value {
     font-size: 24px;
+  }
+
+  .image-config-section {
+    padding: 15px;
+  }
+
+  .image-config-section h3 {
+    font-size: 14px;
+  }
+
+  .image-url-input {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .config-button {
+    font-size: 12px;
+    padding: 8px 15px;
   }
 }

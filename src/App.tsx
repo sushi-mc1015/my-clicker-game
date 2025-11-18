@@ -37,6 +37,15 @@ function App() {
   // クリック時のアニメーション用
   const [isClicking, setIsClicking] = useState(false);
 
+  // ユーザーが入力した画像 URL
+  const [customImageUrl, setCustomImageUrl] = useState<string>(() => {
+    const saved = localStorage.getItem('custom-image-url');
+    return saved || '';
+  });
+
+  // 画像 URL 入力フォーム用の一時状態
+  const [imageUrlInput, setImageUrlInput] = useState(customImageUrl);
+
   // グローバル統計
   const [globalTotalClicks, setGlobalTotalClicks] = useState<number | null>(null);
 
@@ -106,6 +115,22 @@ function App() {
     setTimeout(() => setIsClicking(false), 200);
   };
 
+  // 画像 URL を保存する
+  const handleSaveImageUrl = () => {
+    localStorage.setItem('custom-image-url', imageUrlInput);
+    setCustomImageUrl(imageUrlInput);
+  };
+
+  // 画像 URL をリセット
+  const handleResetImageUrl = () => {
+    setImageUrlInput('');
+    setCustomImageUrl('');
+    localStorage.removeItem('custom-image-url');
+  };
+
+  // 表示する画像 URL（カスタムがあればそれ、なければデフォルト）
+  const displayImageUrl = customImageUrl || 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5';
+
 
   // UI を返す
   return (
@@ -150,12 +175,41 @@ function App() {
         {/* クリック可能な画像 */}
         <div className={`image-click-area ${isClicking ? 'clicked' : ''}`}>
           <img
-            src="https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5"
+            src={displayImageUrl}
             alt="Click me to relieve stress"
             className={`clickable-image ${isClicking ? 'pulse' : ''}`}
             onClick={handleImageClick}
           />
           <p className="click-hint">クリックしてストレス解消！</p>
+        </div>
+
+        {/* 画像 URL 入力フォーム */}
+        <div className="image-config-section">
+          <h3>画像を変更する</h3>
+          <div className="input-group">
+            <input
+              type="text"
+              placeholder="画像 URL を入力してください..."
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              className="image-url-input"
+            />
+            <button
+              onClick={handleSaveImageUrl}
+              className="config-button save"
+            >
+              保存
+            </button>
+            <button
+              onClick={handleResetImageUrl}
+              className="config-button reset"
+            >
+              リセット
+            </button>
+          </div>
+          {customImageUrl && (
+            <p className="current-url">現在: {customImageUrl}</p>
+          )}
         </div>
       </div>
     </div>
