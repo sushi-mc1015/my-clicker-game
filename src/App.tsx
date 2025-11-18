@@ -3,7 +3,7 @@ import './App.css';
 
 // Firebase 関連のインポート
 import { db, auth } from './firebaseConfig';
-import { doc, setDoc, onSnapshot, increment } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -22,6 +22,14 @@ interface GameData {
 
 // グローバル統計ドキュメントの参照
 const globalStatsDocRef = doc(db, 'global', 'stats');
+
+// ランキングエントリの型
+interface RankingEntry {
+  userId: string;
+  displayName: string;
+  score: number;
+  photoURL?: string;
+}
 
 
 function App() {
@@ -64,6 +72,9 @@ function App() {
   // グローバル統計
   const [globalTotalClicks, setGlobalTotalClicks] = useState<number | null>(null);
 
+  // ランキング
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
+
   // 認証状態の監視
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -82,6 +93,35 @@ function App() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  // ランキング取得
+  const fetchRanking = async () => {
+    try {
+      const usersCollection = collection(db, 'users');
+      const rankingQuery = query(
+        usersCollection,
+        orderBy('score', 'desc'),
+        limit(10)
+      );
+      const querySnapshot = await getDocs(rankingQuery);
+      const rankingData: RankingEntry[] = querySnapshot.docs.map((doc) => ({
+        userId: doc.id,
+        displayName: doc.data().displayName || 'Anonymous',
+        score: doc.data().score || 0,
+        photoURL: doc.data().photoURL,
+      }));
+      setRanking(rankingData);
+    } catch (error) {
+      console.error('Error fetching ranking:', error);
+    }
+  };
+
+  // 初回ロード時とスコア更新時にランキングを取得
+  useEffect(() => {
+    fetchRanking();
+    const interval = setInterval(fetchRanking, 5000); // 5秒ごとに更新
+    return () => clearInterval(interval);
   }, []);
 
   // ローカル保存
@@ -134,11 +174,23 @@ function App() {
 
     // Firebase に記録
     try {
+      // グローバル統計を更新
       await setDoc(globalStatsDocRef, { 
         totalClicks: increment(1) 
       }, { merge: true });
+
+      // ログインしていればユーザースコアを保存
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, {
+          displayName: user.displayName || 'Anonymous',
+          photoURL: user.photoURL || null,
+          score: score + 1, // 新しいスコアを保存
+          lastUpdated: new Date(),
+        }, { merge: true });
+      }
     } catch (error) {
-      console.error("Error updating global stats: ", error);
+      console.error("Error updating stats: ", error);
     }
 
     // アニメーション終了
@@ -315,6 +367,34 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* ランキング表示 */}
+        {user && ranking.length > 0 && (
+          <div className="ranking-section">
+            <h3>🏆 トップ10ランキング</h3>
+            <div className="ranking-list">
+              {ranking.map((entry, index) => (
+                <div
+                  key={entry.userId}
+                  className={`ranking-item ${entry.userId === user.uid ? 'current-user' : ''}`}
+                >
+                  <div className="rank-badge">{index + 1}</div>
+                  <div className="rank-avatar">
+                    {entry.photoURL ? (
+                      <img src={entry.photoURL} alt={entry.displayName} />
+                    ) : (
+                      <div className="avatar-placeholder">👤</div>
+                    )}
+                  </div>
+                  <div className="rank-info">
+                    <p className="rank-name">{entry.displayName}</p>
+                    <p className="rank-score">{entry.score.toLocaleString()} クリック</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
