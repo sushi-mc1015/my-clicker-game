@@ -33,10 +33,17 @@ interface RankingEntry {
 
 
 function App() {
+  console.log('App component rendering...');
+  
   // ゲームスコア
   const [score, setScore] = useState<number>(() => {
-    const savedData = localStorage.getItem(SAVE_KEY);
-    return savedData ? JSON.parse(savedData).score : 0;
+    try {
+      const savedData = localStorage.getItem(SAVE_KEY);
+      return savedData ? JSON.parse(savedData).score : 0;
+    } catch (error) {
+      console.error('Error parsing saved score:', error);
+      return 0;
+    }
   });
 
   // 認証ユーザー
@@ -239,10 +246,10 @@ function App() {
   // 表示する画像 URL（優先順位：アップロード画像 > URL入力 > デフォルト）
   const displayImageUrl = uploadedImageUrl || customImageUrl || 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5';
 
-
-  // UI を返す
-  return (
-    <div className="stress-relief-container">
+  try {
+    // UI を返す
+    return (
+      <div className="stress-relief-container">
       {/* ヘッダー：認証情報 */}
       <div className="header">
         <div className="auth-section">
@@ -397,7 +404,28 @@ function App() {
         )}
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error rendering App:', error);
+    return (
+      <div style={{ 
+        width: '100%', 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '24px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1>エラーが発生しました</h1>
+          <p>{String(error)}</p>
+          <p style={{ fontSize: '14px' }}>ブラウザのコンソール（F12）を確認してください</p>
+        </div>
+      </div>
+    );
+  }
 }
 
 export default App;
