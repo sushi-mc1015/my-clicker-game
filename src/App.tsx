@@ -55,6 +55,12 @@ function App() {
   // 画像 URL 入力フォーム用の一時状態
   const [imageUrlInput, setImageUrlInput] = useState(customImageUrl);
 
+  // ファイルアップロード機能
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(() => {
+    const saved = localStorage.getItem('uploaded-image-url');
+    return saved || '';
+  });
+
   // グローバル統計
   const [globalTotalClicks, setGlobalTotalClicks] = useState<number | null>(null);
 
@@ -152,8 +158,34 @@ function App() {
     localStorage.removeItem('custom-image-url');
   };
 
-  // 表示する画像 URL（カスタムがあればそれ、なければデフォルト）
-  const displayImageUrl = customImageUrl || 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5';
+  // ファイルアップロード処理
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック（5MB以下）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ファイルサイズは5MB以下にしてください');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedImageUrl(dataUrl);
+      localStorage.setItem('uploaded-image-url', dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // アップロード画像をリセット
+  const handleResetUploadedImage = () => {
+    setUploadedImageUrl('');
+    localStorage.removeItem('uploaded-image-url');
+  };
+
+  // 表示する画像 URL（優先順位：アップロード画像 > URL入力 > デフォルト）
+  const displayImageUrl = uploadedImageUrl || customImageUrl || 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5';
 
 
   // UI を返す
@@ -225,30 +257,63 @@ function App() {
         {/* 画像 URL 入力フォーム */}
         <div className="image-config-section">
           <h3>画像を変更する</h3>
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="画像 URL を入力してください..."
-              value={imageUrlInput}
-              onChange={(e) => setImageUrlInput(e.target.value)}
-              className="image-url-input"
-            />
-            <button
-              onClick={handleSaveImageUrl}
-              className="config-button save"
-            >
-              保存
-            </button>
-            <button
-              onClick={handleResetImageUrl}
-              className="config-button reset"
-            >
-              リセット
-            </button>
+
+          {/* URL 入力セクション */}
+          <div className="config-subsection">
+            <h4>URL から入力</h4>
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="画像 URL を入力してください..."
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                className="image-url-input"
+              />
+              <button
+                onClick={handleSaveImageUrl}
+                className="config-button save"
+              >
+                保存
+              </button>
+              <button
+                onClick={handleResetImageUrl}
+                className="config-button reset"
+              >
+                リセット
+              </button>
+            </div>
+            {customImageUrl && (
+              <p className="current-url">URL: {customImageUrl}</p>
+            )}
           </div>
-          {customImageUrl && (
-            <p className="current-url">現在: {customImageUrl}</p>
-          )}
+
+          {/* ファイルアップロードセクション */}
+          <div className="config-subsection">
+            <h4>ファイルからアップロード</h4>
+            <div className="file-upload-group">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="file-input"
+                id="image-file-input"
+              />
+              <label htmlFor="image-file-input" className="file-label">
+                📁 ファイルを選択
+              </label>
+              {uploadedImageUrl && (
+                <button
+                  onClick={handleResetUploadedImage}
+                  className="config-button reset"
+                >
+                  クリア
+                </button>
+              )}
+            </div>
+            {uploadedImageUrl && (
+              <p className="current-url">✓ 画像をアップロード済み</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
