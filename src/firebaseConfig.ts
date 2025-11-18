@@ -1,8 +1,9 @@
 // src/firebaseConfig.ts
-// 以下の内容でファイル全体を置き換えてください
+// 以下の内容でファイル全体を「置き換え」てください
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // 認証機能 (Auth) をインポート
 
 // あなたのWebアプリのFirebase設定
 // (あなたの正しい設定値です)
@@ -19,5 +20,12 @@ const firebaseConfig = {
 // Firebaseアプリを初期化
 const app = initializeApp(firebaseConfig);
 
-// Firestoreのインスタンスを取得し、他ファイルで使えるように名前付きでエクスポート
-export const db = getFirestore(app);
+// Firestoreのインスタンスを取得
+const db = getFirestore(app);
+// 認証のインスタンスを取得
+const auth = getAuth(app);
+
+// 他のファイル (App.tsx など) で 'db' と 'auth' の両方を使えるようにエクスポート
+export { db, auth };
+
+// Vercelに強制的に変更を認識させるためのコメント
