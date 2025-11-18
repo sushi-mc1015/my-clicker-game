@@ -98,17 +98,30 @@ function App() {
 
   // グローバル統計の監視（1日ごと）
   useEffect(() => {
-    const todayKey = getTodayDateKey();
-    const todayStatsDocRef = doc(db, 'global', 'dailyStats', todayKey);
-    
-    const unsubscribe = onSnapshot(todayStatsDocRef, (doc) => {
-      if (doc.exists()) {
-        setGlobalTotalClicks(doc.data().clicks || 0);
-      } else {
-        setGlobalTotalClicks(0);
-      }
-    });
-    return () => unsubscribe();
+    try {
+      const todayKey = getTodayDateKey();
+      console.log('Today key:', todayKey);
+      const todayStatsDocRef = doc(db, 'global', 'dailyStats', todayKey);
+      console.log('Setting up snapshot listener for:', todayStatsDocRef.path);
+      
+      const unsubscribe = onSnapshot(
+        todayStatsDocRef, 
+        (snapshot) => {
+          console.log('Snapshot received:', snapshot.exists(), snapshot.data());
+          if (snapshot.exists()) {
+            setGlobalTotalClicks(snapshot.data().clicks || 0);
+          } else {
+            setGlobalTotalClicks(0);
+          }
+        },
+        (error) => {
+          console.error('Error in onSnapshot:', error);
+        }
+      );
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error setting up global stats listener:', error);
+    }
   }, []);
 
   // ランキング取得
