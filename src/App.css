@@ -671,3 +671,42 @@ body {
     font-size: 11px;
   }
 }
+
+/* ========== 利用規約ボタン ========== */
+.terms-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.terms-button {
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea;
+  border: 2px solid #667eea;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.terms-button:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.terms-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .terms-button {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+}
+

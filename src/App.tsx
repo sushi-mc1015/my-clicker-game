@@ -15,6 +15,9 @@ import type { User } from "firebase/auth";
 // サウンド管理
 import { playPunchSound, playBulletSound } from './soundManager';
 
+// 利用規約ページ
+import TermsOfService from './TermsOfService';
+
 // LocalStorage キーとゲームデータ型
 const SAVE_KEY = 'stress-relief-game-save';
 
@@ -81,6 +84,9 @@ function App() {
 
   // エフェクト選択（'punch' | 'bullet'）
   const [effectMode, setEffectMode] = useState<'punch' | 'bullet'>('punch');
+
+  // 利用規約の表示状態
+  const [showTerms, setShowTerms] = useState(false);
 
   // ユーザーが入力した画像 URL
   const [customImageUrl, setCustomImageUrl] = useState<string>(() => {
@@ -335,6 +341,16 @@ function App() {
             {globalTotalClicks === null ? '...' : Math.floor(globalTotalClicks)}
           </p>
         </div>
+
+        {/* 利用規約 */}
+        <div className="terms-link">
+          <button 
+            className="terms-button"
+            onClick={() => setShowTerms(true)}
+          >
+            📋 利用規約
+          </button>
+        </div>
       </div>
 
       {/* メインゲームエリア */}
@@ -559,6 +575,9 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* 利用規約モーダル */}
+      {showTerms && <TermsOfService onClose={() => setShowTerms(false)} />}
     </div>
     );
   } catch (error) {
