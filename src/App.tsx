@@ -425,68 +425,6 @@ function App() {
         <div className="image-config-section">
           <h3>画像を変更する</h3>
 
-          {/* プリセットイラスト選択 */}
-          <div className="config-subsection">
-            <h4>プリセットを選択</h4>
-            <div className="preset-selector">
-              <button
-                className="preset-button"
-                onClick={() => {
-                  setCustomImageUrl('https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5');
-                  localStorage.setItem('custom-image-url', 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5');
-                  setUploadedImageUrl('');
-                  localStorage.removeItem('uploaded-image-url');
-                }}
-              >
-                😤 デフォルト
-              </button>
-              <button
-                className="preset-button"
-                onClick={() => {
-                  setCustomImageUrl('https://media.giphy.com/media/cZQSMcT4s7spoNUeKS/giphy.gif');
-                  localStorage.setItem('custom-image-url', 'https://media.giphy.com/media/cZQSMcT4s7spoNUeKS/giphy.gif');
-                  setUploadedImageUrl('');
-                  localStorage.removeItem('uploaded-image-url');
-                }}
-              >
-                😤 怒った顔
-              </button>
-              <button
-                className="preset-button"
-                onClick={() => {
-                  setCustomImageUrl('https://media.giphy.com/media/dXICEAXhc0PFBPT9VS/giphy.gif');
-                  localStorage.setItem('custom-image-url', 'https://media.giphy.com/media/dXICEAXhc0PFBPT9VS/giphy.gif');
-                  setUploadedImageUrl('');
-                  localStorage.removeItem('uploaded-image-url');
-                }}
-              >
-                🤜 パンチバッグ
-              </button>
-              <button
-                className="preset-button"
-                onClick={() => {
-                  setCustomImageUrl('https://media.giphy.com/media/xT9IgEx8SbQ2jxN0B2/giphy.gif');
-                  localStorage.setItem('custom-image-url', 'https://media.giphy.com/media/xT9IgEx8SbQ2jxN0B2/giphy.gif');
-                  setUploadedImageUrl('');
-                  localStorage.removeItem('uploaded-image-url');
-                }}
-              >
-                💣 爆弾
-              </button>
-              <button
-                className="preset-button"
-                onClick={() => {
-                  setCustomImageUrl('https://media.giphy.com/media/L95W4LvsscNkI/giphy.gif');
-                  localStorage.setItem('custom-image-url', 'https://media.giphy.com/media/L95W4LvsscNkI/giphy.gif');
-                  setUploadedImageUrl('');
-                  localStorage.removeItem('uploaded-image-url');
-                }}
-              >
-                🎯 ダルマ落とし
-              </button>
-            </div>
-          </div>
-
           {/* URL 入力セクション */}
           <div className="config-subsection">
             <h4>URL から入力</h4>

@@ -360,38 +360,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* プリセット選択ボタン */
-.preset-selector {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.preset-button {
-  padding: 12px 15px;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: #333;
-}
-
-.preset-button:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background: #f5f7ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
-}
-
-.preset-button:active {
-  transform: translateY(0);
-}
-
 .input-group {
   display: flex;
   gap: 10px;
@@ -658,15 +626,6 @@ body {
 
   .image-config-section h3 {
     font-size: 14px;
-  }
-
-  .preset-selector {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .preset-button {
-    font-size: 11px;
-    padding: 10px 12px;
   }
 
   .image-url-input {
