@@ -76,6 +76,9 @@ function App() {
   const [bulletEffects, setBulletEffects] = useState<BulletEffect[]>([]);
   const [bulletIdCounter, setBulletIdCounter] = useState(0);
 
+  // エフェクト選択（'punch' | 'bullet'）
+  const [effectMode, setEffectMode] = useState<'punch' | 'bullet'>('punch');
+
   // ユーザーが入力した画像 URL
   const [customImageUrl, setCustomImageUrl] = useState<string>(() => {
     const saved = localStorage.getItem('custom-image-url');
@@ -197,20 +200,19 @@ function App() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // パンチエフェクトを追加
-    const newPunchId = punchIdCounter;
-    setPunchEffects([...punchEffects, { id: newPunchId, x, y }]);
-    setPunchIdCounter(punchIdCounter + 1);
+    // effectMode に応じてエフェクトを追加
+    if (effectMode === 'punch') {
+      // パンチエフェクトを追加
+      const newPunchId = punchIdCounter;
+      setPunchEffects([...punchEffects, { id: newPunchId, x, y }]);
+      setPunchIdCounter(punchIdCounter + 1);
 
-    // 300ms後にパンチを削除
-    setTimeout(() => {
-      setPunchEffects((prev) => prev.filter((p) => p.id !== newPunchId));
-    }, 300);
-
-    // ログイン時は銃のエフェクトも追加
-    console.log('Click handler - user status:', !!user);
-    if (user) {
-      console.log('Adding bullet effect');
+      // 300ms後にパンチを削除
+      setTimeout(() => {
+        setPunchEffects((prev) => prev.filter((p) => p.id !== newPunchId));
+      }, 300);
+    } else if (effectMode === 'bullet' && user) {
+      // 銃のエフェクトを追加（ログイン時のみ）
       const newBulletId = bulletIdCounter;
       setBulletEffects([...bulletEffects, { id: newBulletId, x, y }]);
       setBulletIdCounter(bulletIdCounter + 1);
@@ -332,6 +334,27 @@ function App() {
         <div className="score-display">
           <p className="score-label">あなたのスコア</p>
           <p className="score-value">{Math.floor(score)}</p>
+        </div>
+
+        {/* エフェクト選択 */}
+        <div className="effect-selector">
+          <p className="effect-label">ストレス発散方法を選択</p>
+          <div className="effect-buttons">
+            <button
+              className={`effect-button punch ${effectMode === 'punch' ? 'active' : ''}`}
+              onClick={() => setEffectMode('punch')}
+            >
+              👊 パンチ
+            </button>
+            <button
+              className={`effect-button bullet ${effectMode === 'bullet' && user ? 'active' : ''} ${!user ? 'disabled' : ''}`}
+              onClick={() => user && setEffectMode('bullet')}
+              disabled={!user}
+              title={user ? 'ログイン状態' : 'ログインが必要です'}
+            >
+              🔫 銃 {!user && '(ログイン必須)'}
+            </button>
+          </div>
         </div>
 
         {/* クリック可能な画像 */}
