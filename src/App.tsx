@@ -12,6 +12,9 @@ import {
 } from "firebase/auth";
 import type { User } from "firebase/auth";
 
+// サウンド管理
+import { playPunchSound, playBulletSound } from './soundManager';
+
 // LocalStorage キーとゲームデータ型
 const SAVE_KEY = 'stress-relief-game-save';
 
@@ -211,6 +214,9 @@ function App() {
       setTimeout(() => {
         setPunchEffects((prev) => prev.filter((p) => p.id !== newPunchId));
       }, 300);
+
+      // パンチ音を再生
+      playPunchSound();
     } else if (effectMode === 'bullet' && user) {
       // 銃のエフェクトを追加（ログイン時のみ）
       const newBulletId = bulletIdCounter;
@@ -221,6 +227,9 @@ function App() {
       setTimeout(() => {
         setBulletEffects((prev) => prev.filter((b) => b.id !== newBulletId));
       }, 400);
+
+      // 銃撃音を再生
+      playBulletSound();
     }
 
     setIsClicking(true);
@@ -458,7 +467,71 @@ function App() {
           </div>
         </div>
 
-        {/* ランキング表示 */}
+        {/* サウンド設定セクション */}
+        <div className="image-config-section sound-config">
+          <h3>🔊 サウンド設定</h3>
+          <p className="sound-description">
+            パンチ音と銃撃音のファイルを設定します（MP3形式推奨）
+          </p>
+
+          {/* パンチ音設定 */}
+          <div className="config-subsection">
+            <h4>パンチ音</h4>
+            <div className="file-upload-group">
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    localStorage.setItem('punch-sound-url', url);
+                  }
+                }}
+                className="file-input"
+                id="punch-sound-input"
+              />
+              <label htmlFor="punch-sound-input" className="file-label">
+                🎵 ファイルを選択
+              </label>
+            </div>
+            <button 
+              onClick={() => playPunchSound()}
+              className="config-button test"
+            >
+              ▶ 再生テスト
+            </button>
+          </div>
+
+          {/* 銃撃音設定 */}
+          <div className="config-subsection">
+            <h4>銃撃音</h4>
+            <div className="file-upload-group">
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    localStorage.setItem('bullet-sound-url', url);
+                  }
+                }}
+                className="file-input"
+                id="bullet-sound-input"
+              />
+              <label htmlFor="bullet-sound-input" className="file-label">
+                🎵 ファイルを選択
+              </label>
+            </div>
+            <button 
+              onClick={() => playBulletSound()}
+              className="config-button test"
+            >
+              ▶ 再生テスト
+            </button>
+          </div>
+        </div>
         {user && ranking.length > 0 && (
           <div className="ranking-section">
             <h3>🏆 トップ10ランキング</h3>
