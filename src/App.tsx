@@ -67,6 +67,15 @@ function App() {
   const [punchEffects, setPunchEffects] = useState<PunchEffect[]>([]);
   const [punchIdCounter, setPunchIdCounter] = useState(0);
 
+  // 銃のエフェクト表示用（ログイン時のみ）
+  interface BulletEffect {
+    id: number;
+    x: number;
+    y: number;
+  }
+  const [bulletEffects, setBulletEffects] = useState<BulletEffect[]>([]);
+  const [bulletIdCounter, setBulletIdCounter] = useState(0);
+
   // ユーザーが入力した画像 URL
   const [customImageUrl, setCustomImageUrl] = useState<string>(() => {
     const saved = localStorage.getItem('custom-image-url');
@@ -189,14 +198,26 @@ function App() {
     const y = e.clientY - rect.top;
 
     // パンチエフェクトを追加
-    const newId = punchIdCounter;
-    setPunchEffects([...punchEffects, { id: newId, x, y }]);
+    const newPunchId = punchIdCounter;
+    setPunchEffects([...punchEffects, { id: newPunchId, x, y }]);
     setPunchIdCounter(punchIdCounter + 1);
 
     // 300ms後にパンチを削除
     setTimeout(() => {
-      setPunchEffects((prev) => prev.filter((p) => p.id !== newId));
+      setPunchEffects((prev) => prev.filter((p) => p.id !== newPunchId));
     }, 300);
+
+    // ログイン時は銃のエフェクトも追加
+    if (user) {
+      const newBulletId = bulletIdCounter;
+      setBulletEffects([...bulletEffects, { id: newBulletId, x, y }]);
+      setBulletIdCounter(bulletIdCounter + 1);
+
+      // 400ms後に銃を削除
+      setTimeout(() => {
+        setBulletEffects((prev) => prev.filter((b) => b.id !== newBulletId));
+      }, 400);
+    }
 
     setIsClicking(true);
     setScore(score + 1);
@@ -331,6 +352,19 @@ function App() {
                 }}
               >
                 👊
+              </div>
+            ))}
+            {/* 銃のエフェクト表示（ログイン時のみ） */}
+            {user && bulletEffects.map((bullet) => (
+              <div
+                key={bullet.id}
+                className="bullet-effect"
+                style={{
+                  left: `${bullet.x}px`,
+                  top: `${bullet.y}px`,
+                }}
+              >
+                🔫
               </div>
             ))}
           </div>

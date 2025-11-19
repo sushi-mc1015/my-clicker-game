@@ -220,6 +220,30 @@ body {
   }
 }
 
+/* 銃のエフェクト */
+.bullet-effect {
+  position: absolute;
+  font-size: 100px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: bullet-animation 0.5s ease-out forwards;
+  z-index: 11;
+}
+
+@keyframes bullet-animation {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8) rotate(-45deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.3) rotate(45deg);
+    opacity: 0;
+  }
+}
+
 .click-hint {
   margin: 0;
   font-size: 18px;
