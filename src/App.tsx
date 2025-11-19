@@ -208,7 +208,9 @@ function App() {
     }, 300);
 
     // ログイン時は銃のエフェクトも追加
+    console.log('Click handler - user status:', !!user);
     if (user) {
+      console.log('Adding bullet effect');
       const newBulletId = bulletIdCounter;
       setBulletEffects([...bulletEffects, { id: newBulletId, x, y }]);
       setBulletIdCounter(bulletIdCounter + 1);
