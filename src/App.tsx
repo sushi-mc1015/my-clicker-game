@@ -1,5 +1,37 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Link } from "react-router-dom";
 import './App.css';
+import OrangutanGame from "./OrangutanGame";
+
+function Home() {
+  return (
+    <div style={{ padding: 24 }}>
+      <h1>Orangutan Jungle</h1>
+      <p>バナナを集めてランキングを目指そう！</p>
+      <nav style={{ display: "flex", gap: 12 }}>
+        <Link to="/game">▶ ゲームをはじめる</Link>
+        <Link to="/howto">📒 遊び方</Link>
+        <Link to="/terms">📋 利用規約</Link>
+      </nav>
+    </div>
+  );
+}
+
+
+
+
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>
+);
 
 // Firebase 関連のインポート
 import { db, auth } from './firebaseConfig';
