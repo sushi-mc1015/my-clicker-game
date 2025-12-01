@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import OrangutanGame from "./OrangutanGame";
 import StressGame from "./StressGame";
@@ -14,23 +13,15 @@ function Home() {
       </p>
       
       <div style={gridStyle}>
-        {/* オラウータンゲームへのリンク */}
         <Link to="/orangutan" style={cardStyle}>
           <div style={iconStyle}>🦧</div>
           <h2 style={{ margin: "10px 0" }}>Orangutan Jungle</h2>
-          <p style={{ fontSize: "0.9rem", color: "#555" }}>
-            バナナを集めてランキングを目指せ！<br/>アクション要素あり
-          </p>
           <button style={buttonStyle}>プレイする</button>
         </Link>
 
-        {/* ストレス発散ゲームへのリンク */}
         <Link to="/stress" style={cardStyle}>
           <div style={iconStyle}>👊</div>
           <h2 style={{ margin: "10px 0" }}>ストレス発散ゲーム</h2>
-          <p style={{ fontSize: "0.9rem", color: "#555" }}>
-            クリック連打でストレス解消！<br/>ランキング機能つき
-          </p>
           <button style={buttonStyle}>プレイする</button>
         </Link>
       </div>
@@ -42,7 +33,7 @@ function Home() {
   );
 }
 
-// Appコンポーネント（ルーター設定）
+// Appコンポーネント
 export default function App() {
   return (
     <Routes>
@@ -59,54 +50,9 @@ export default function App() {
   );
 }
 
-// --- スタイル定義 ---
-const containerStyle: React.CSSProperties = {
-  textAlign: "center",
-  padding: "50px 20px",
-  fontFamily: "'Helvetica Neue', Arial, sans-serif",
-  minHeight: "100vh",
-  background: "#f0f2f5",
-  color: "#333"
-};
-
-const gridStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "30px",
-  justifyContent: "center",
-  flexWrap: "wrap",
-  maxWidth: "900px",
-  margin: "0 auto"
-};
-
-const cardStyle: React.CSSProperties = {
-  background: "white",
-  borderRadius: "16px",
-  padding: "30px",
-  textDecoration: "none",
-  color: "inherit",
-  width: "300px",
-  boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
-  transition: "transform 0.2s, box-shadow 0.2s",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  cursor: "pointer",
-  border: "1px solid transparent"
-};
-
-const iconStyle: React.CSSProperties = {
-  fontSize: "4rem",
-  marginBottom: "10px"
-};
-
-const buttonStyle: React.CSSProperties = {
-  marginTop: "20px",
-  padding: "10px 24px",
-  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  color: "white",
-  border: "none",
-  borderRadius: "8px",
-  fontSize: "1rem",
-  fontWeight: "bold",
-  cursor: "pointer"
-};
+// スタイル
+const containerStyle: React.CSSProperties = { textAlign: "center", padding: "50px 20px", background: "#f0f2f5", minHeight: "100vh", color: "#333", fontFamily: "sans-serif" };
+const gridStyle: React.CSSProperties = { display: "flex", gap: "30px", justifyContent: "center", flexWrap: "wrap" };
+const cardStyle: React.CSSProperties = { background: "white", borderRadius: "16px", padding: "30px", width: "300px", textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 10px 25px rgba(0,0,0,0.05)" };
+const iconStyle: React.CSSProperties = { fontSize: "4rem", marginBottom: "10px" };
+const buttonStyle: React.CSSProperties = { marginTop: "20px", padding: "10px 24px", background: "#667eea", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" };
