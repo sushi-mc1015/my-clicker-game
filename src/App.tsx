@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import OrangutanGame from "./OrangutanGame";
 import StressGame from "./StressGame";
 import TermsOfService from "./TermsOfService";
-import { useState } from "react";
 
-// ホーム画面（メニュー）のコンポーネント
+// ホーム画面（メニュー）
 function Home() {
   return (
     <div className="home-container" style={containerStyle}>
@@ -42,10 +42,8 @@ function Home() {
   );
 }
 
-// Appコンポーネント（画面の切り替え管理）
+// Appコンポーネント（ルーター設定）
 export default function App() {
-  const [showTerms, setShowTerms] = useState(false);
-
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -61,7 +59,7 @@ export default function App() {
   );
 }
 
-// --- 簡易スタイル定義 ---
+// --- スタイル定義 ---
 const containerStyle: React.CSSProperties = {
   textAlign: "center",
   padding: "50px 20px",
