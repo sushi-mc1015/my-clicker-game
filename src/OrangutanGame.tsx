@@ -172,19 +172,22 @@ export default function OrangutanGame() {
     try {
       if (user) {// ログインしていれば、Firebaseにスコアを送信
         const ref = doc(db, "orangutan_users", user.uid);
+        // 現在のスコアを累計に加算
+        const newTotalScore = firebaseScore + score;
         await setDoc(
           ref,
           {
             name: user.displayName || "Anonymous",
             photoURL: user.photoURL || null,
-            score: score,
+            score: newTotalScore,
             updatedAt: new Date(),
           },
           { merge: true }
         );
+        console.log(`Score saved: ${newTotalScore} (previous: ${firebaseScore}, current: ${score})`);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error saving score:", e);
     }
   };
 
