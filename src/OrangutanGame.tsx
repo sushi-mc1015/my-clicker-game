@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { db, auth } from "./firebaseConfig";
 import {
-  doc, setDoc, collection, query, orderBy, limit, getDocs,
+  doc, setDoc, collection, query, orderBy, limit, getDocs, onSnapshot,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, type User,
@@ -32,6 +32,7 @@ export default function OrangutanGame() {
   const [bonusPos, setBonusPos] = useState<{ x: number; y: number }>({ x: 30, y: 30 });//ボーナスの位置
 
   const [ranking, setRanking] = useState<RankRow[]>([]);//ランキングのデータ
+  const [firebaseScore, setFirebaseScore] = useState<number>(0);//Firebase に保存されたスコア
   const [toast, setToast] = useState<string | null>(null);//画面に出るメッセージ
 
   const lastClickRef = useRef<number>(0);//最後にクリックした時間
@@ -39,6 +40,23 @@ export default function OrangutanGame() {
   const bonusTimerRef = useRef<number | null>(null);//ボーナスタイマー
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
+
+  // ===== Firebase スコア監視 =====
+  useEffect(() => {
+    if (!user) {
+      setFirebaseScore(0);
+      return;
+    }
+    const ref = doc(db, "orangutan_users", user.uid);
+    const unsubscribe = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setFirebaseScore(snap.data().score || 0);
+      } else {
+        setFirebaseScore(0);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   // ===== ランキング =====
   const fetchRanking = async () => {
@@ -323,6 +341,7 @@ export default function OrangutanGame() {
         <aside className="og-panel">
           <h2>スコア：{score.toLocaleString()}</h2>
           <p>コンボ：{combo}（x{multiplier}）</p>
+          {user && <p style={{ fontSize: '0.9rem', color: '#666' }}>📊 あなたの累計：{firebaseScore.toLocaleString()}</p>}
 
           <div className="og-bar">
             <div className="og-bar-top">
