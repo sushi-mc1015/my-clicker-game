@@ -51,6 +51,45 @@ export default function OrangutanGame() {
     thinking: '/assets/orangutan-thinking.png',
   };
 
+  // 難易度倍率の計算
+  const getDifficultyMultiplier = () => {
+    let multiplier = 1;
+    
+    // オラウータン選択による倍率
+    switch (selectedOrangutanPreset) {
+      case 'banana':
+        multiplier *= 1.2;
+        break;
+      case 'funny':
+        multiplier *= 1.5;
+        break;
+      case 'thinking':
+        multiplier *= 2;
+        break;
+      default:
+        break;
+    }
+    
+    // ゴールデンバナナ選択による倍率
+    switch (selectedGoldenBananaPreset) {
+      case 'yellow':
+        multiplier *= 1.3;
+        break;
+      case 'shine':
+        multiplier *= 1.5;
+        break;
+      case 'sparkle':
+        multiplier *= 2;
+        break;
+      default:
+        break;
+    }
+    
+    return multiplier;
+  };
+
+  const difficultyMultiplier = useMemo(() => getDifficultyMultiplier(), [selectedOrangutanPreset, selectedGoldenBananaPreset]);
+
   // ゴールデンバナナ画像プリセット定義
   const goldenBananaPresets: { [key: string]: string } = {
     default: '/assets/golden-banana.png',
@@ -261,9 +300,11 @@ export default function OrangutanGame() {
     if (dt < 500) setCombo((c) => c + 1);
     else setCombo(1);
 
-    const gain = gainBase * multiplier;
+    // 難易度倍率を含めた獲得ポイント計算
+    const gain = gainBase * multiplier * difficultyMultiplier;
     setScore((s) => s + gain);
-    setStamina((s) => Math.max(0, s - (1.8 + multiplier)));
+    // スタミナ消費も難易度に応じて増加
+    setStamina((s) => Math.max(0, s - (1.8 + multiplier) * difficultyMultiplier));
     
     // パンチ音再生（修正点）
     playPunchSound();
@@ -281,7 +322,8 @@ export default function OrangutanGame() {
     if (!bonusVisible) return;
     clickCommon(10);
     setBonusVisible(false);
-    showToast("ゴールデンバナナ +10！");
+    const bonusPoints = Math.floor(10 * multiplier * difficultyMultiplier);
+    showToast(`ゴールデンバナナ +${bonusPoints}！`);
   };
 
   const showToast = (msg: string) => {
@@ -397,6 +439,10 @@ export default function OrangutanGame() {
             <div className="og-bar-rail">
               <div className="og-bar-fill" style={{ width: `${stamina}%` }} />
             </div>
+          </div>
+
+          <div style={{ marginTop: 12, padding: 8, backgroundColor: '#f9f9f9', borderRadius: 6, fontSize: '0.9rem' }}>
+            <p style={{ margin: 0 }}>難易度倍率: <b>×{difficultyMultiplier.toFixed(2)}</b></p>
           </div>
 
           <hr className="og-hr" />
