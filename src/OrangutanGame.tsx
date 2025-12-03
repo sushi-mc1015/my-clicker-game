@@ -33,12 +33,19 @@ export default function OrangutanGame() {
 
   const [ranking, setRanking] = useState<RankRow[]>([]);//ランキングのデータ
   const [firebaseScore, setFirebaseScore] = useState<number>(0);//Firebase に保存されたスコア
-  const [uploadedOrangutanUrl, setUploadedOrangutanUrl] = useState<string>(() => {
-    const saved = localStorage.getItem('orangutan-image-url');
-    return saved || '';
-  });//アップロードされたオラウータン画像 URL
-  const [imageUrlInput, setImageUrlInput] = useState('');//画像 URL 入力用
+  const [selectedOrangutanPreset, setSelectedOrangutanPreset] = useState<string>(() => {
+    const saved = localStorage.getItem('orangutan-preset');
+    return saved || 'default';
+  });//選択されたオラウータン画像プリセット
   const [toast, setToast] = useState<string | null>(null);//画面に出るメッセージ
+
+  // オラウータン画像プリセット定義
+  const orangutanPresets: { [key: string]: string } = {
+    default: '/assets/orangutan.png',
+    banana: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300&h=300&fit=crop',
+    funny: 'https://images.unsplash.com/photo-1540573133985-87b6da432cf9?w=300&h=300&fit=crop',
+    thinking: 'https://images.unsplash.com/photo-1551986782-d244d7d30188?w=300&h=300&fit=crop',
+  };
 
   const lastClickRef = useRef<number>(0);//最後にクリックした時間
   const timerRef = useRef<number | null>(null);//ゲームタイマーID
@@ -206,32 +213,10 @@ export default function OrangutanGame() {
     await signOut(auth).catch((err) => console.error(err));
   };
 
-  const handleOrangutanImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setUploadedOrangutanUrl(result);
-        localStorage.setItem('orangutan-image-url', result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSaveOrangutanUrl = () => {
-    if (imageUrlInput.trim()) {
-      setUploadedOrangutanUrl(imageUrlInput);
-      localStorage.setItem('orangutan-image-url', imageUrlInput);
-      setImageUrlInput('');
-      showToast('オラウータン画像を変更しました！');
-    }
-  };
-
-  const handleResetOrangutanImage = () => {
-    setUploadedOrangutanUrl('');
-    localStorage.removeItem('orangutan-image-url');
-    showToast('オラウータン画像をリセットしました');
+  const handleSelectOrangutanPreset = (preset: string) => {
+    setSelectedOrangutanPreset(preset);
+    localStorage.setItem('orangutan-preset', preset);
+    showToast(`オラウータンを ${preset} に変更しました！`);
   };
 
   const moveOrangutan = () => {
@@ -239,7 +224,7 @@ export default function OrangutanGame() {
   };
 
   // 表示するオラウータン画像
-  const displayOrangutanImage = uploadedOrangutanUrl || '/assets/orangutan.png';
+  const displayOrangutanImage = orangutanPresets[selectedOrangutanPreset] || orangutanPresets.default;
 
   const clickCommon = (gainBase = 1) => {
     if (gameState !== "playing") return;
@@ -394,36 +379,28 @@ export default function OrangutanGame() {
           </div>
 
           <hr className="og-hr" />
-          <h3>オラウータン画像</h3>
-          <div style={{ fontSize: '0.85rem', marginBottom: 10 }}>
-            <div style={{ marginBottom: 10 }}>
-              <label style={{ display: 'block', marginBottom: 5 }}>URL から入力</label>
-              <div style={{ display: 'flex', gap: 5, marginBottom: 5 }}>
-                <input
-                  type="text"
-                  placeholder="画像 URL..."
-                  value={imageUrlInput}
-                  onChange={(e) => setImageUrlInput(e.target.value)}
-                  style={{ flex: 1, padding: 5, fontSize: '0.85rem' }}
-                />
-                <button onClick={handleSaveOrangutanUrl} style={{ padding: '5px 10px', fontSize: '0.85rem' }}>保存</button>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="og-image-input" style={{ display: 'block', marginBottom: 5 }}>ファイル から選択</label>
-              <input
-                id="og-image-input"
-                type="file"
-                accept="image/*"
-                onChange={handleOrangutanImageUpload}
-                style={{ fontSize: '0.85rem' }}
-              />
-            </div>
-            {uploadedOrangutanUrl && (
-              <button onClick={handleResetOrangutanImage} style={{ marginTop: 8, padding: '5px 10px', fontSize: '0.85rem', color: 'red' }}>
-                🗑️ リセット
+          <h3>オラウータンを選択</h3>
+          <div style={{ fontSize: '0.85rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            {Object.entries(orangutanPresets).map(([key, _value]) => (
+              <button
+                key={key}
+                onClick={() => handleSelectOrangutanPreset(key)}
+                style={{
+                  padding: 8,
+                  background: selectedOrangutanPreset === key ? '#667eea' : '#f0f0f0',
+                  color: selectedOrangutanPreset === key ? 'white' : '#333',
+                  border: '1px solid #ddd',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: selectedOrangutanPreset === key ? 'bold' : 'normal',
+                }}
+              >
+                {key === 'default' && '📌 デフォルト'}
+                {key === 'banana' && '🍌 バナナ'}
+                {key === 'funny' && '😄 面白い'}
+                {key === 'thinking' && '🤔 思考中'}
               </button>
-            )}
+            ))}
           </div>
 
           <hr className="og-hr" />
