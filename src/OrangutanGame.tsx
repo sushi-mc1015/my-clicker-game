@@ -42,9 +42,9 @@ export default function OrangutanGame() {
   // オラウータン画像プリセット定義
   const orangutanPresets: { [key: string]: string } = {
     default: '/assets/orangutan.png',
-    banana: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300&h=300&fit=crop',
-    funny: 'https://images.unsplash.com/photo-1540573133985-87b6da432cf9?w=300&h=300&fit=crop',
-    thinking: 'https://images.unsplash.com/photo-1551986782-d244d7d30188?w=300&h=300&fit=crop',
+    banana: '/assets/banana_image.png',
+    funny: '/assets/orangutan-funny.png',
+    thinking: '/assets/orangutan-thinking.png',
   };
 
   const lastClickRef = useRef<number>(0);//最後にクリックした時間
