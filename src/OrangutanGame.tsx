@@ -286,6 +286,12 @@ export default function OrangutanGame() {
   // 表示するゴールデンバナナ画像
   const displayGoldenBananaImage = goldenBananaPresets[selectedGoldenBananaPreset] || goldenBananaPresets.default;
 
+  // 難易度に応じたクリック対象のサイズ計算
+  const baseSize = 100; // 基本サイズ（px）
+  const minSize = 50; // 最小サイズ（難易度が高いほど小さくなる）
+  const apeSize = Math.max(minSize, baseSize / difficultyMultiplier);
+  const bonusSize = apeSize * 0.8; // ボーナスはやや小さく
+
   const clickCommon = (gainBase = 1) => {
     if (gameState !== "playing") return;
     if (cooling) return;
@@ -364,7 +370,12 @@ export default function OrangutanGame() {
             onClick={onApeClick}
             onTouchStart={(e) => { e.preventDefault(); onApeClick(); }}
             className="og-ape"
-            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+            style={{ 
+              left: `${pos.x}%`, 
+              top: `${pos.y}%`,
+              width: `${apeSize}px`,
+              height: `${apeSize}px`
+            }}
             aria-label="Collect banana"
           >
             <img src={displayOrangutanImage} alt="orangutan" draggable={false} />
@@ -376,7 +387,12 @@ export default function OrangutanGame() {
               onClick={onBonusClick}
               onTouchStart={(e) => { e.preventDefault(); onBonusClick(); }}
               className="og-bonus"
-              style={{ left: `${bonusPos.x}%`, top: `${bonusPos.y}%` }}
+              style={{ 
+                left: `${bonusPos.x}%`, 
+                top: `${bonusPos.y}%`,
+                width: `${bonusSize}px`,
+                height: `${bonusSize}px`
+              }}
               aria-label="Golden banana"
               title="+10"
             >
