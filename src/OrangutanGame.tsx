@@ -37,14 +37,26 @@ export default function OrangutanGame() {
     const saved = localStorage.getItem('orangutan-preset');
     return saved || 'default';
   });//選択されたオラウータン画像プリセット
+  const [selectedGoldenBananaPreset, setSelectedGoldenBananaPreset] = useState<string>(() => {
+    const saved = localStorage.getItem('golden-banana-preset');
+    return saved || 'default';
+  });//選択されたゴールデンバナナ画像プリセット
   const [toast, setToast] = useState<string | null>(null);//画面に出るメッセージ
 
   // オラウータン画像プリセット定義
   const orangutanPresets: { [key: string]: string } = {
     default: '/assets/orangutan.png',
-    banana: '/assets/banana_image.png',
+    banana: '/assets/orangutan-banana.png',
     funny: '/assets/orangutan-funny.png',
     thinking: '/assets/orangutan-thinking.png',
+  };
+
+  // ゴールデンバナナ画像プリセット定義
+  const goldenBananaPresets: { [key: string]: string } = {
+    default: '/assets/golden-banana.png',
+    yellow: '/assets/golden-banana-yellow.png',
+    shine: '/assets/golden-banana-shine.png',
+    sparkle: '/assets/golden-banana-sparkle.png',
   };
 
   const lastClickRef = useRef<number>(0);//最後にクリックした時間
@@ -219,12 +231,21 @@ export default function OrangutanGame() {
     showToast(`オラウータンを ${preset} に変更しました！`);
   };
 
+  const handleSelectGoldenBananaPreset = (preset: string) => {
+    setSelectedGoldenBananaPreset(preset);
+    localStorage.setItem('golden-banana-preset', preset);
+    showToast(`ゴールデンバナナを ${preset} に変更しました！`);
+  };
+
   const moveOrangutan = () => {
     setPos({ x: 10 + Math.random() * 80, y: 15 + Math.random() * 65 });
   };
 
   // 表示するオラウータン画像
   const displayOrangutanImage = orangutanPresets[selectedOrangutanPreset] || orangutanPresets.default;
+
+  // 表示するゴールデンバナナ画像
+  const displayGoldenBananaImage = goldenBananaPresets[selectedGoldenBananaPreset] || goldenBananaPresets.default;
 
   const clickCommon = (gainBase = 1) => {
     if (gameState !== "playing") return;
@@ -316,7 +337,7 @@ export default function OrangutanGame() {
               aria-label="Golden banana"
               title="+10"
             >
-              <img src="/assets/golden-banana.png" alt="golden banana" draggable={false} />
+              <img src={displayGoldenBananaImage} alt="golden banana" draggable={false} />
             </button>
           )}
 
@@ -399,6 +420,31 @@ export default function OrangutanGame() {
                 {key === 'banana' && '🍌 バナナ'}
                 {key === 'funny' && '😄 面白い'}
                 {key === 'thinking' && '🤔 思考中'}
+              </button>
+            ))}
+          </div>
+
+          <hr className="og-hr" />
+          <h3>ゴールデンバナナを選択</h3>
+          <div style={{ fontSize: '0.85rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            {Object.entries(goldenBananaPresets).map(([key, _value]) => (
+              <button
+                key={key}
+                onClick={() => handleSelectGoldenBananaPreset(key)}
+                style={{
+                  padding: 8,
+                  background: selectedGoldenBananaPreset === key ? '#ffd700' : '#f0f0f0',
+                  color: selectedGoldenBananaPreset === key ? '#333' : '#666',
+                  border: '1px solid #ddd',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: selectedGoldenBananaPreset === key ? 'bold' : 'normal',
+                }}
+              >
+                {key === 'default' && '🌟 デフォルト'}
+                {key === 'yellow' && '💛 黄色'}
+                {key === 'shine' && '✨ 光'}
+                {key === 'sparkle' && '⭐ きらめき'}
               </button>
             ))}
           </div>
