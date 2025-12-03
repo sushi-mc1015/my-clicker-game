@@ -311,10 +311,11 @@ export default function OrangutanGame() {
   };
 
   const onApeClick = () => {
+    const points = Math.floor(1 * multiplier * difficultyMultiplier);
     clickCommon(1);
     moveOrangutan();
     // 実績
-    if (score + 1 >= 100 && score < 100) showToast("実績：100バナナ達成！");
+    if (score + points >= 100 && score < 100) showToast("実績：100バナナ達成！");
     if (combo >= 20 && (score % 5 === 0)) showToast("コンボ20+！");
   };
 
@@ -441,8 +442,12 @@ export default function OrangutanGame() {
             </div>
           </div>
 
-          <div style={{ marginTop: 12, padding: 8, backgroundColor: '#f9f9f9', borderRadius: 6, fontSize: '0.9rem' }}>
-            <p style={{ margin: 0 }}>難易度倍率: <b>×{difficultyMultiplier.toFixed(2)}</b></p>
+          <div style={{ marginTop: 12, padding: 10, backgroundColor: '#fff3cd', borderRadius: 6, fontSize: '0.85rem', border: '1px solid #ffc107' }}>
+            <p style={{ margin: '0 0 6px 0', fontWeight: 'bold' }}>⚙️ 難易度倍率: ×{difficultyMultiplier.toFixed(2)}</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#555' }}>
+              選択中: {selectedOrangutanPreset === 'default' && '📌 デフォルト'}{selectedOrangutanPreset === 'banana' && '🍌 バナナ'}{selectedOrangutanPreset === 'funny' && '😄 面白い'}{selectedOrangutanPreset === 'thinking' && '🤔 思考中'} 
+              × {selectedGoldenBananaPreset === 'default' && '⭐ デフォルト'}{selectedGoldenBananaPreset === 'yellow' && '🟡 黄色'}{selectedGoldenBananaPreset === 'shine' && '✨ 輝き'}{selectedGoldenBananaPreset === 'sparkle' && '💫 キラキラ'}
+            </p>
           </div>
 
           <hr className="og-hr" />
