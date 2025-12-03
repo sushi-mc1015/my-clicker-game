@@ -48,6 +48,7 @@ export default function StressGame() {
 
   // グローバル統計・ランキング
   const [globalDailyClicks, setGlobalDailyClicks] = useState<number>(0);
+  const [isLoadingGlobal, setIsLoadingGlobal] = useState<boolean>(true);
   const [ranking, setRanking] = useState<{userId: string, displayName: string, score: number}[]>([]);
 
   // 利用規約
@@ -90,13 +91,27 @@ export default function StressGame() {
   useEffect(() => {
     const today = getTodayDateKey();
     const docRef = doc(db, 'global_stats', today);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setGlobalDailyClicks(docSnap.data().totalClicks || 0);
-      } else {
+    setIsLoadingGlobal(true);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const clicks = data.totalClicks || 0;
+          setGlobalDailyClicks(clicks);
+          console.log('Global clicks updated:', clicks);
+        } else {
+          setGlobalDailyClicks(0);
+          console.log('Global stats document does not exist yet');
+        }
+        setIsLoadingGlobal(false);
+      },
+      (error) => {
+        console.error('Error fetching global stats:', error);
         setGlobalDailyClicks(0);
+        setIsLoadingGlobal(false);
       }
-    });
+    );
     return () => unsubscribe();
   }, []);
 
@@ -245,7 +260,7 @@ export default function StressGame() {
       <h1>ストレス発散ゲーム</h1>
       
       <div className="global-stats" style={{ background: '#fff', padding: 10, borderRadius: 10, marginBottom: 20 }}>
-        <div>🌍 今日の世界総クリック数: <strong>{globalDailyClicks.toLocaleString()}</strong></div>
+        <div>🌍 今日の世界総クリック数: <strong>{isLoadingGlobal ? '読み込み中...' : globalDailyClicks.toLocaleString()}</strong></div>
         {user && (
           <div style={{ marginTop: 10, fontSize: '0.95rem', color: '#333' }}>
             <div>📊 あなたの累計スコア: <strong>{score.toLocaleString()}</strong></div>
