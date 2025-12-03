@@ -12,31 +12,31 @@ import { playPunchSound } from "./soundManager";
 type RankRow = { userId: string; name: string; score: number; photoURL?: string };
 type GameState = "idle" | "playing" | "paused" | "ended";
 
-const DURATION = 60; // 秒
-const BONUS_INTERVAL_MS = 4500;
+const DURATION = 30; // 秒
+const BONUS_INTERVAL_MS = 9000;
 
 export default function OrangutanGame() {
-  const [user, setUser] = useState<User | null>(null);
-  const [gameState, setGameState] = useState<GameState>("idle");
+  const [user, setUser] = useState<User | null>(null);// ユーザー情報（ログインしているか？）
+  const [gameState, setGameState] = useState<GameState>("idle");// ゲームの進行状態（プレイ中？終了？など）と残り時間
   const [timeLeft, setTimeLeft] = useState<number>(DURATION);
 
-  const [score, setScore] = useState(0);
-  const [bestLocal, setBestLocal] = useState<number>(() => Number(localStorage.getItem("orangutan-best") || 0));
-  const [combo, setCombo] = useState(0);
-  const [multiplier, setMultiplier] = useState(1);
-  const [stamina, setStamina] = useState(100);
-  const [cooling, setCooling] = useState(false);
-  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [score, setScore] = useState(0);// ゲームプレイ用データ
+  const [bestLocal, setBestLocal] = useState<number>(() => Number(localStorage.getItem("orangutan-best") || 0));//現在のスコア
+  const [combo, setCombo] = useState(0);//コンボの数
+  const [multiplier, setMultiplier] = useState(1);//スコア倍率
+  const [stamina, setStamina] = useState(100);//スタミナゲージ
+  const [cooling, setCooling] = useState(false);//スタミナがあるかどうかの確認
+  
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 50, y: 50 });//オラウータンの初期位置
+  const [bonusVisible, setBonusVisible] = useState(false);//ボーナスが画面上に表示されているか
+  const [bonusPos, setBonusPos] = useState<{ x: number; y: number }>({ x: 30, y: 30 });//ボーナスの位置
 
-  const [bonusVisible, setBonusVisible] = useState(false);
-  const [bonusPos, setBonusPos] = useState<{ x: number; y: number }>({ x: 30, y: 30 });
+  const [ranking, setRanking] = useState<RankRow[]>([]);//ランキングのデータ
+  const [toast, setToast] = useState<string | null>(null);//画面に出るメッセージ
 
-  const [ranking, setRanking] = useState<RankRow[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const lastClickRef = useRef<number>(0);
-  const timerRef = useRef<number | null>(null);
-  const bonusTimerRef = useRef<number | null>(null);
+  const lastClickRef = useRef<number>(0);//最後にクリックした時間
+  const timerRef = useRef<number | null>(null);//ゲームタイマーID
+  const bonusTimerRef = useRef<number | null>(null);//ボーナスタイマー
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
@@ -59,13 +59,13 @@ export default function OrangutanGame() {
   
   useEffect(() => {
     fetchRanking();
-    const t = window.setInterval(fetchRanking, 8000);
+    const t = window.setInterval(fetchRanking, 60000);//1分ごとにランキング更新(60000ms)
     return () => window.clearInterval(t);
   }, []);
 
   // ===== コンボ倍率 =====
   const comboMultiplier = useMemo(() => {
-    if (combo >= 40) return 6;
+    if (combo >= 40) return 5;
     if (combo >= 30) return 4;
     if (combo >= 20) return 3;
     if (combo >= 10) return 2;
@@ -122,16 +122,16 @@ export default function OrangutanGame() {
     setMultiplier(1);
     setStamina(100);
     setCooling(false);
-    setGameState("playing");
-    startTimer();
-    startBonus();
-    moveOrangutan();
+    setGameState("playing");// 状態を「プレイ中」に変更
+    startTimer();// タイマー始動
+    startBonus();// ボーナス出現タイマー始動
+    moveOrangutan();// キャラを移動
   };
 
   const pauseGame = () => {
     if (gameState !== "playing") return;
     setGameState("paused");
-    stopAllTimers();
+    stopAllTimers();// タイマーを止める
   };
 
   const resumeGame = () => {
@@ -152,7 +152,7 @@ export default function OrangutanGame() {
     });
     // 保存（ログイン時）
     try {
-      if (user) {
+      if (user) {// ログインしていれば、Firebaseにスコアを送信
         const ref = doc(db, "orangutan_users", user.uid);
         await setDoc(
           ref,
@@ -194,7 +194,7 @@ export default function OrangutanGame() {
     const now = performance.now();
     const dt = now - (lastClickRef.current || 0);
     lastClickRef.current = now;
-    if (dt < 450) setCombo((c) => c + 1);
+    if (dt < 500) setCombo((c) => c + 1);
     else setCombo(1);
 
     const gain = gainBase * multiplier;
@@ -209,15 +209,15 @@ export default function OrangutanGame() {
     clickCommon(1);
     moveOrangutan();
     // 実績
-    if (score + 1 >= 100 && score < 100) showToast("🏅 実績：100バナナ達成！");
-    if (combo >= 20 && (score % 5 === 0)) showToast("🔥 コンボ20+！");
+    if (score + 1 >= 100 && score < 100) showToast("実績：100バナナ達成！");
+    if (combo >= 20 && (score % 5 === 0)) showToast("コンボ20+！");
   };
 
   const onBonusClick = () => {
     if (!bonusVisible) return;
     clickCommon(10);
     setBonusVisible(false);
-    showToast("🍌 ゴールデンバナナ +10！");
+    showToast("ゴールデンバナナ +10！");
   };
 
   const showToast = (msg: string) => {
@@ -225,7 +225,7 @@ export default function OrangutanGame() {
     window.setTimeout(() => setToast(null), 1300);
   };
 
-  // ===== UI =====
+  // ===== UI =====以下HTML式の表示
   return (
     <div className="og-root">
       <header className="og-header">
@@ -285,7 +285,7 @@ export default function OrangutanGame() {
             <div className="og-overlay">
               {gameState === "idle" && (
                 <>
-                  <h2>🦧 Orangutan Jungle</h2>
+                  <h2>Orangutan Jungle</h2>
                   <p>60秒でスコアを稼ごう！</p>
                   <button className="og-cta" onClick={startGame}>▶ スタート</button>
                 </>
@@ -321,8 +321,8 @@ export default function OrangutanGame() {
 
         {/* パネル */}
         <aside className="og-panel">
-          <h2>🟡 スコア：{score.toLocaleString()}</h2>
-          <p>🔥 コンボ：{combo}（x{multiplier}）</p>
+          <h2>スコア：{score.toLocaleString()}</h2>
+          <p>コンボ：{combo}（x{multiplier}）</p>
 
           <div className="og-bar">
             <div className="og-bar-top">
@@ -335,7 +335,7 @@ export default function OrangutanGame() {
           </div>
 
           <hr className="og-hr" />
-          <h3>🏆 ランキング</h3>
+          <h3>ランキング</h3>
           <div className="og-ranklist">
             {ranking.map((r, i) => (
               <div key={r.userId} className="og-rankrow">
@@ -347,7 +347,7 @@ export default function OrangutanGame() {
             {ranking.length === 0 && <p>まだスコアがありません</p>}
           </div>
           <hr className="og-hr" />
-          <Link to="/howto" className="og-link">📒 遊び方を見る</Link>
+          <Link to="/howto" className="og-link">遊び方を見る</Link>
         </aside>
       </main>
     </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { db, auth } from './firebaseConfig';
-import { doc, setDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from "firebase/auth";
+import { doc, setDoc, onSnapshot, increment, collection, query, orderBy, limit } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, updateProfile, type User } from "firebase/auth";
 import { playPunchSound, playBulletSound } from './soundManager';
 import TermsOfService from './TermsOfService';
 import './App.css'; 
@@ -31,211 +31,278 @@ export default function StressGame() {
   const [user, setUser] = useState<User | null>(null);
   const [isClicking, setIsClicking] = useState(false);
   
+  // ニックネーム編集用
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
+  
   // エフェクト管理
   const [punchEffects, setPunchEffects] = useState<{id: number, x: number, y: number}[]>([]);
-  const [punchIdCounter, setPunchIdCounter] = useState(0);
-  const [bulletEffects, setBulletEffects] = useState<{id: number, x: number, y: number}[]>([]);
-  const [bulletIdCounter, setBulletIdCounter] = useState(0);
-  const [effectMode, setEffectMode] = useState<'punch' | 'bullet'>('punch');
+  
+  // 画像設定
+  const [targetImageUrl] = useState<string>('/assets/target_placeholder.png');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
 
-  // 設定・データ
+  // 武器選択
+  const [weapon, setWeapon] = useState<'fist' | 'gun'>('fist');
+
+  // グローバル統計・ランキング
+  const [globalDailyClicks, setGlobalDailyClicks] = useState<number>(0);
+  const [ranking, setRanking] = useState<{userId: string, displayName: string, score: number}[]>([]);
+
+  // 利用規約
   const [showTerms, setShowTerms] = useState(false);
-  const [customImageUrl, setCustomImageUrl] = useState<string>(() => localStorage.getItem('custom-image-url') || '');
-  const [imageUrlInput, setImageUrlInput] = useState(customImageUrl);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(() => localStorage.getItem('uploaded-image-url') || '');
-  const [globalTotalClicks, setGlobalTotalClicks] = useState<number | null>(null);
-  const [ranking, setRanking] = useState<any[]>([]);
 
-  // --- useEffects ---
-
-  // 1. ユーザー認証監視
+  // --- 初期化 ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => setUser(currentUser));
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) setNewName(currentUser.displayName || "");
+    });
+    
+    // ローカルストレージから画像読み込み
+    const savedImg = localStorage.getItem('uploaded-image-url');
+    if (savedImg) setUploadedImageUrl(savedImg);
+
     return () => unsubscribe();
   }, []);
 
-  // 2. グローバル統計（dbを使用）
+  // 画像URLの決定
+  const displayImage = uploadedImageUrl || targetImageUrl;
+
+  // --- ランキング監視 ---
   useEffect(() => {
-    try {
-      const todayKey = getTodayDateKey();
-      const todayStatsDocRef = doc(db, 'global', 'dailyStats', todayKey);
-      const unsubscribe = onSnapshot(todayStatsDocRef, (snapshot) => {
-        if (snapshot.exists()) setGlobalTotalClicks(snapshot.data().clicks || 0);
-        else setGlobalTotalClicks(0);
-      });
-      return () => unsubscribe();
-    } catch (e) { console.error(e); }
+    // 日次ランキングなどを想定する場合、collectionを分けることも可能
+    // 今回は単純なスコアランキング
+    const q = query(collection(db, 'stress_scores'), orderBy('score', 'desc'), limit(10));
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const ranks = snap.docs.map(doc => ({
+        userId: doc.id,
+        displayName: doc.data().displayName || 'Unknown',
+        score: doc.data().score || 0
+      }));
+      setRanking(ranks);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // 3. ランキング取得（db, rankingを使用）
+  // --- グローバルクリック監視 (今日) ---
   useEffect(() => {
-    const fetchRanking = async () => {
-      try {
-        const q = query(collection(db, 'users'), orderBy('score', 'desc'), limit(10));
-        const snapshot = await getDocs(q);
-        setRanking(snapshot.docs.map(d => ({
-          userId: d.id,
-          displayName: d.data().displayName || 'Anonymous',
-          score: d.data().score || 0,
-          photoURL: d.data().photoURL,
-        })));
-      } catch (e) { console.error(e); }
-    };
-    fetchRanking();
-    const interval = setInterval(fetchRanking, 10000); // 10秒ごとに更新
-    return () => clearInterval(interval);
+    const today = getTodayDateKey();
+    const docRef = doc(db, 'global_stats', today);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setGlobalDailyClicks(docSnap.data().totalClicks || 0);
+      } else {
+        setGlobalDailyClicks(0);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  // 4. スコア保存
+  // --- スコア保存 (ローカル) ---
   useEffect(() => {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ score, lastSavedAt: Date.now() }));
+    const data = { score, updatedAt: Date.now() };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }, [score]);
 
-  // --- ハンドラー関数 ---
-
-  const handleGoogleSignIn = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { console.error(e); }
-  };
-  
-  const handleSignOut = async () => {
-    try { await signOut(auth); } catch (e) { console.error(e); }
-  };
-
-  const handleImageClick = async (e: React.MouseEvent<HTMLImageElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // エフェクト分岐
-    if (effectMode === 'punch') {
-      const id = punchIdCounter;
-      setPunchEffects(prev => [...prev, { id, x, y }]);
-      setPunchIdCounter(c => c + 1);
-      setTimeout(() => setPunchEffects(prev => prev.filter(p => p.id !== id)), 300);
-      playPunchSound();
-    } else if (effectMode === 'bullet' && user) {
-      const id = bulletIdCounter;
-      setBulletEffects(prev => [...prev, { id, x, y }]);
-      setBulletIdCounter(c => c + 1);
-      setTimeout(() => setBulletEffects(prev => prev.filter(b => b.id !== id)), 400);
-      playBulletSound();
+  // --- アクション ---
+  const handleClick = async (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    // 座標取得 (マウス/タッチ対応)
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+      clientY = (e as React.MouseEvent).clientY;
     }
 
-    setIsClicking(true);
-    setScore(s => s + 1);
-    setTimeout(() => setIsClicking(false), 200);
+    // エフェクト追加
+    const id = Date.now();
+    setPunchEffects(prev => [...prev, { id, x: clientX, y: clientY }]);
+    setTimeout(() => {
+      setPunchEffects(prev => prev.filter(p => p.id !== id));
+    }, 500);
 
-    // Firestore更新
-    try {
-      const todayKey = getTodayDateKey();
-      setDoc(doc(db, 'global', 'dailyStats', todayKey), { clicks: increment(1) }, { merge: true });
-      if (user) {
-        setDoc(doc(db, 'users', user.uid), {
+    // 音再生
+    if (weapon === 'fist') playPunchSound();
+    else playBulletSound();
+
+    // スコア加算
+    const points = weapon === 'fist' ? 1 : 5;
+    const newScore = score + points;
+    setScore(newScore);
+    setIsClicking(true);
+    setTimeout(() => setIsClicking(false), 100);
+
+    // Firebase更新 (ログイン時)
+    if (user) {
+      try {
+        // 1. 個人のスコア更新
+        await setDoc(doc(db, 'stress_scores', user.uid), {
           displayName: user.displayName || 'Anonymous',
-          photoURL: user.photoURL || null,
-          score: score + 1,
-          lastUpdated: new Date(),
+          score: newScore,
+          updatedAt: Date.now()
         }, { merge: true });
+
+        // 2. グローバル統計更新 (今日)
+        const today = getTodayDateKey();
+        await setDoc(
+          doc(db, 'global_stats', today),
+          { totalClicks: increment(points) },
+          { merge: true }
+        );
+
+      } catch (err) {
+        console.error("Firebase update error:", err);
       }
-    } catch (e) { console.error(e); }
+    }
   };
 
+  // ニックネーム変更
+  const handleUpdateName = async () => {
+    if (!user || !newName.trim()) return;
+    try {
+      await updateProfile(user, { displayName: newName });
+      // DBも即時更新
+      await setDoc(doc(db, 'stress_scores', user.uid), {
+        displayName: newName
+      }, { merge: true });
+      
+      setUser({ ...user, displayName: newName });
+      setIsEditingName(false);
+    } catch (error) {
+      console.error(error);
+      alert("名前の変更に失敗しました");
+    }
+  };
+
+  // ログイン
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // 画像アップロード
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || file.size > 5*1024*1024) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const res = ev.target?.result as string;
-      setUploadedImageUrl(res);
-      localStorage.setItem('uploaded-image-url', res);
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setUploadedImageUrl(result);
+        localStorage.setItem('uploaded-image-url', result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveUrl = () => {
-    localStorage.setItem('custom-image-url', imageUrlInput);
-    setCustomImageUrl(imageUrlInput);
+    if (imageUrlInput) {
+      setUploadedImageUrl(imageUrlInput);
+      localStorage.setItem('uploaded-image-url', imageUrlInput);
+      setImageUrlInput('');
+    }
   };
 
-  // 表示画像決定
-  const displayImageUrl = uploadedImageUrl || customImageUrl || 'https://via.placeholder.com/300?text=%F0%9F%98%A4+ストレス%0A%F0%9F%92%A5';
-
-  // --- JSX描画（ここで全ての変数を使用します） ---
   return (
     <div className="stress-relief-container">
-      {/* 戻るボタン */}
-      <div style={{position: 'absolute', top: 10, left: 10, zIndex: 100}}>
-         <Link to="/" style={{color: 'white', fontWeight: 'bold', textDecoration: 'none', background: 'rgba(0,0,0,0.5)', padding: '5px 10px', borderRadius: '5px'}}>← Homeに戻る</Link>
-      </div>
-
+      {/* ヘッダー */}
       <div className="header">
-        <div className="auth-section">
+        <Link to="/" style={{ textDecoration: 'none', fontSize: '1.2rem', marginRight: 'auto' }}>🏠 Home</Link>
+        
+        <div className="auth-section" style={{ background: '#fff', padding: '5px 15px', borderRadius: 20 }}>
           {user ? (
-            <div className="user-info">
-              <p>User: <strong>{user.displayName}</strong></p>
-              <button className="auth-button logout" onClick={handleSignOut}>ログアウト</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {isEditingName ? (
+                <>
+                  <input 
+                    value={newName} 
+                    onChange={e => setNewName(e.target.value)}
+                    style={{ padding: 4, width: 100 }}
+                  />
+                  <button onClick={handleUpdateName}>保存</button>
+                  <button onClick={() => setIsEditingName(false)}>✕</button>
+                </>
+              ) : (
+                <>
+                  <span>👤 {user.displayName}</span>
+                  <button onClick={() => setIsEditingName(true)} style={{ padding: '2px 6px', fontSize: '0.8rem' }}>✏️</button>
+                </>
+              )}
+              <button onClick={() => signOut(auth)}>ログアウト</button>
             </div>
           ) : (
-            <button className="auth-button" onClick={handleGoogleSignIn}>Googleでログイン</button>
+            <button onClick={handleLogin}>Googleでログイン</button>
           )}
         </div>
-        
-        {/* グローバル統計を使用 */}
-        <div className="global-stats">
-          <p>みんなのクリック数: {globalTotalClicks !== null ? globalTotalClicks.toLocaleString() : '...'}</p>
-        </div>
-
-        <button className="terms-button" onClick={() => setShowTerms(true)}>規約</button>
       </div>
 
-      <div className="game-area">
-        <div className="score-display">
-          <p className="score-label">Score</p>
-          <p className="score-value">{Math.floor(score)}</p>
-        </div>
+      <h1>ストレス発散ゲーム</h1>
+      
+      <div className="global-stats" style={{ background: '#fff', padding: 10, borderRadius: 10, marginBottom: 20 }}>
+        <div>🌍 今日の世界総クリック数: <strong>{globalDailyClicks.toLocaleString()}</strong></div>
+      </div>
 
-        {/* エフェクトモード切替を使用 */}
-        <div className="effect-selector" style={{ margin: '10px 0' }}>
-          <button 
-            className={`effect-button ${effectMode==='punch'?'active':''}`} 
-            onClick={()=>setEffectMode('punch')} 
-            style={{marginRight: 10, padding: '5px 15px', background: effectMode==='punch'?'#f39c12':'#eee'}}
-          >
-            👊 パンチ
-          </button>
-          <button 
-            className={`effect-button ${effectMode==='bullet'?'active':''}`} 
-            disabled={!user} 
-            onClick={()=>user && setEffectMode('bullet')}
-            style={{padding: '5px 15px', background: effectMode==='bullet'?'#e74c3c':'#eee', opacity: !user ? 0.5 : 1}}
-          >
-            🔫 銃（要ログイン）
-          </button>
-        </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <button 
+          onClick={() => setWeapon('fist')}
+          style={{ background: weapon === 'fist' ? '#ffeb3b' : '#eee', border: weapon === 'fist' ? '2px solid orange' : '1px solid #ccc' }}
+        >
+          パンチ (1pt)
+        </button>
+        <button 
+          onClick={() => setWeapon('gun')}
+          style={{ background: weapon === 'gun' ? '#ffeb3b' : '#eee', border: weapon === 'gun' ? '2px solid orange' : '1px solid #ccc' }}
+        >
+          銃 (5pt)
+        </button>
+      </div>
 
-        <div className={`image-click-area ${isClicking ? 'clicked' : ''}`} style={{position: 'relative', display: 'inline-block'}}>
-          <div className="punch-container">
-            <img 
-              src={displayImageUrl} 
-              className={`clickable-image ${isClicking ? 'pulse' : ''}`} 
-              onClick={handleImageClick}
-              style={{ maxWidth: '100%', maxHeight: '400px', cursor: 'pointer' }}
-              alt="target"
-            />
-            {/* パンチエフェクト描画 */}
-            {punchEffects.map(p => (
-              <div key={p.id} className="punch-effect" style={{position: 'absolute', left:p.x, top:p.y, fontSize: '2rem', pointerEvents: 'none'}}>👊</div>
-            ))}
-            {/* 銃エフェクト描画（bulletEffectsを使用） */}
-            {user && bulletEffects.map(b => (
-              <div key={b.id} className="bullet-effect" style={{position: 'absolute', left:b.x, top:b.y, fontSize: '2rem', pointerEvents: 'none'}}>🕳️</div>
-            ))}
-          </div>
+      <div className="game-area-container" style={{ position: 'relative', width: '100%', maxWidth: 500, height: 400, margin: '0 auto' }}>
+        <div 
+          className={`target-image ${isClicking ? 'shake' : ''}`}
+          style={{ 
+            width: '100%', height: '100%', 
+            backgroundImage: `url(${displayImage})`, 
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            borderRadius: 10, border: '4px solid #333',
+            cursor: weapon === 'fist' ? 'url(/assets/fist-cursor.png), pointer' : 'crosshair'
+          }}
+          onClick={handleClick}
+        >
+          {/* エフェクト表示 */}
+          {punchEffects.map(effect => (
+            <div 
+              key={effect.id}
+              className="punch-effect"
+              style={{ 
+                position: 'fixed', left: effect.x, top: effect.y,
+                fontSize: '3rem', pointerEvents: 'none',
+                transform: 'translate(-50%, -50%)',
+                animation: 'fade-out 0.5s forwards'
+              }}
+            >
+              {weapon === 'fist' ? '💥' : '💨'}
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* 設定エリア（imageUrlInput, setImageUrlInput, setUploadedImageUrlを使用） */}
-        <div className="image-config-section" style={{ marginTop: 20, padding: 20, background: '#f9f9f9', borderRadius: 10 }}>
-          <h3>画像設定</h3>
+      <div className="score-board" style={{ marginTop: 20, fontSize: '2rem', fontWeight: 'bold', color: '#fff', textShadow: '2px 2px 4px #000' }}>
+        SCORE: {score.toLocaleString()}
+      </div>
+
+      {/* 設定エリア */}
+      <div className="settings-area" style={{ marginTop: 40, background: 'rgba(255,255,255,0.9)', padding: 20, borderRadius: 10, width: '100%', maxWidth: 500 }}>
+        <h3>画像設定</h3>
+        <p style={{ fontSize: '0.9rem', color: '#666' }}>嫌いなものの画像をアップロードして叩こう！</p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{marginBottom: 10}}>
             <input 
               type="text" 
@@ -259,7 +326,7 @@ export default function StressGame() {
         {/* ランキング表示（ranking変数を使用） */}
         {user && ranking.length > 0 && (
           <div className="ranking-section" style={{marginTop: 20, textAlign: 'left', maxWidth: 400, margin: '20px auto'}}>
-            <h3>🏆 Top 10 Ranking</h3>
+            <h3>Top 10 Ranking</h3>
             <ul style={{listStyle: 'none', padding: 0}}>
               {ranking.map((r, i) => (
                 <li key={r.userId} style={{padding: '5px 0', borderBottom: '1px solid #eee', color: r.userId===user.uid ? 'blue' : 'black'}}>
@@ -272,6 +339,11 @@ export default function StressGame() {
       </div>
 
       {showTerms && <TermsOfService onClose={() => setShowTerms(false)} />}
+      <div style={{ marginTop: 20 }}>
+        <button onClick={() => setShowTerms(true)} style={{ background: 'none', border: 'none', color: '#fff', textDecoration: 'underline' }}>
+          利用規約
+        </button>
+      </div>
     </div>
   );
 }
