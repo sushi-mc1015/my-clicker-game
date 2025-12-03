@@ -246,6 +246,11 @@ export default function StressGame() {
       
       <div className="global-stats" style={{ background: '#fff', padding: 10, borderRadius: 10, marginBottom: 20 }}>
         <div>🌍 今日の世界総クリック数: <strong>{globalDailyClicks.toLocaleString()}</strong></div>
+        {user && (
+          <div style={{ marginTop: 10, fontSize: '0.95rem', color: '#333' }}>
+            <div>📊 あなたの累計スコア: <strong>{score.toLocaleString()}</strong></div>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -282,7 +287,7 @@ export default function StressGame() {
               className="punch-effect"
               style={{ 
                 position: 'fixed', left: effect.x, top: effect.y,
-                fontSize: '3rem', pointerEvents: 'none',
+                fontSize: '5rem', pointerEvents: 'none',
                 transform: 'translate(-50%, -50%)',
                 animation: 'fade-out 0.5s forwards'
               }}
